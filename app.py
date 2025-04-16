@@ -87,9 +87,9 @@ with colC:
 
 with colD:
     st.subheader("🏢 Top Hiring Companies")
-    company_counts = filtered_df["Company"].value_counts().head(5)
-    fig4, ax4 = plt.subplots(figsize=(6, 4))
-    ax4.barh(company_counts.index, company_counts.values)
+    company_counts = filtered_df["Company"].value_counts().head(10)
+    fig4, ax4 = plt.subplots(figsize=(6, 5))
+    ax4.barh(company_counts.index[::-1], company_counts.values[::-1])
     ax4.set_xlabel("Jobs")
     ax4.set_ylabel("Company")
     st.pyplot(fig4)
@@ -109,27 +109,31 @@ st.pyplot(fig5)
 # --- Job Listings Table ---
 st.subheader("🧾 Latest Job Listings")
 
-latest_jobs = filtered_df[[
+# Prepare display dataframe
+table_df = filtered_df[[
     "Job_Title_Cleaned", "Company", "City", "Job_Level", "Posted_On", "Job_Link"
-]].sort_values(by="Posted_On", ascending=False).head(50).reset_index(drop=True)
+]].sort_values(by="Posted_On", ascending=False).copy()
 
-latest_jobs.columns = ["Job Title", "Company", "City", "Experience Level", "Date Posted", "Apply"]
-latest_jobs["Apply"] = latest_jobs["Apply"].apply(lambda x: f"<a href='{x}' target='_blank'>Apply</a>")
+table_df["Posted_On"] = pd.to_datetime(table_df["Posted_On"]).dt.strftime("%Y-%m-%d")
+table_df.rename(columns={
+    "Job_Title_Cleaned": "Job Title",
+    "Company": "Company",
+    "City": "City",
+    "Job_Level": "Experience Level",
+    "Posted_On": "Date Posted",
+    "Job_Link": "Apply"
+}, inplace=True)
 
-# Build and render HTML Table
-table_html = "<table><thead><tr>"
-for col in latest_jobs.columns:
-    table_html += f"<th style='text-align:left;padding:8px'>{col}</th>"
-table_html += "</tr></thead><tbody>"
+# Convert job links to clickable markdown
+table_df["Apply"] = table_df["Apply"].apply(lambda x: f"[Apply]({x})")
 
-for _, row in latest_jobs.iterrows():
-    table_html += "<tr>"
-    for col in latest_jobs.columns:
-        table_html += f"<td style='text-align:left;padding:8px'>{row[col]}</td>"
-    table_html += "</tr>"
+# Display as interactive table
+st.dataframe(table_df, use_container_width=True)
 
-table_html += "</tbody></table>"
-st.markdown(table_html, unsafe_allow_html=True)
+# Optional: Download button
+csv = table_df.to_csv(index=False).encode("utf-8")
+st.download_button("⬇️ Download Full Job Data as CSV", data=csv, file_name="filtered_jobs.csv", mime="text/csv")
 
+# Footer
 st.markdown("---")
 st.caption(" Built by Adwaith Raj · Powered by Jooble API · Hosted on Streamlit")
