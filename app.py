@@ -124,16 +124,34 @@ table_df.rename(columns={
     "Job_Link": "Apply"
 }, inplace=True)
 
-# Convert job links to clickable markdown
-table_df["Apply"] = table_df["Apply"].apply(lambda x: f"[Apply]({x})")
+# Reset index to 1, 2, 3...
+table_df.reset_index(drop=True, inplace=True)
+table_df.index += 1
 
-# Display as interactive table
-st.dataframe(table_df, use_container_width=True)
+# Convert job links to clickable HTML
+table_df["Apply"] = table_df["Apply"].apply(lambda x: f"<a href='{x}' target='_blank'>Apply</a>")
 
-# Optional: Download button
-csv = table_df.to_csv(index=False).encode("utf-8")
+# Build HTML Table
+table_html = "<style>table {width: 100%; border-collapse: collapse;} th, td {padding: 10px; text-align: left;} th {background-color: #f0f2f6;}</style>"
+table_html += "<table><thead><tr><th>#</th>"
+for col in table_df.columns:
+    table_html += f"<th>{col}</th>"
+table_html += "</tr></thead><tbody>"
+
+for idx, row in table_df.iterrows():
+    table_html += f"<tr><td>{idx}</td>"
+    for col in table_df.columns:
+        table_html += f"<td>{row[col]}</td>"
+    table_html += "</tr>"
+
+table_html += "</tbody></table>"
+
+st.markdown(table_html, unsafe_allow_html=True)
+
+# Optional: CSV Download
+csv = table_df.drop(columns=["Apply"]).to_csv(index_label="Index", index=True).encode("utf-8")
 st.download_button("⬇️ Download Full Job Data as CSV", data=csv, file_name="filtered_jobs.csv", mime="text/csv")
 
 # Footer
 st.markdown("---")
-st.caption(" Built by Adwaith Raj · Powered by Jooble API · Hosted on Streamlit")
+st.caption("📡 Built by Adwaith Raj · Powered by Jooble API · Hosted on Streamlit")
