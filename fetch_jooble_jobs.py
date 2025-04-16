@@ -1,9 +1,14 @@
+
 import requests
 import json
 import pandas as pd
 import time
+import os
+from dotenv import load_dotenv
 
-API_KEY = "cae46c3a-26ce-4a1f-b13a-9f8b1e46fe0e"
+# Load API key from .env
+load_dotenv()
+API_KEY = os.getenv("JOOBLE_API_KEY")
 url = f"https://jooble.org/api/{API_KEY}"
 
 # Updated keywords and countries
