@@ -1,49 +1,69 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-# Load the cleaned data
+# Load cleaned data
 df = pd.read_csv("cleaned_jooble_jobs.csv")
 
-st.set_page_config(page_title="Data Job Market in Canada", layout="wide")
+# Convert date
+df["Posted_On"] = pd.to_datetime(df["Posted_On"])
 
-st.title("📊 Canadian Data Job Trends - Last 7 Days (Jooble API)")
-st.markdown("An interactive dashboard analyzing the latest data analyst, data engineer, and business analyst jobs in Canada.")
+# Sidebar filters
+st.sidebar.title("🔍 Filter Jobs")
+job_filter = st.sidebar.multiselect("Select Job Titles", sorted(df["Job_Title_Cleaned"].unique()), default=df["Job_Title_Cleaned"].unique())
+city_filter = st.sidebar.multiselect("Select Cities", sorted(df["City"].unique()), default=df["City"].unique())
+level_filter = st.sidebar.multiselect("Select Job Level", sorted(df["Job_Level"].unique()), default=df["Job_Level"].unique())
 
-# Top KPIs
+# Filter logic
+filtered_df = df[
+    (df["Job_Title_Cleaned"].isin(job_filter)) &
+    (df["City"].isin(city_filter)) &
+    (df["Job_Level"].isin(level_filter))
+]
+
+# Dashboard title
+st.title("📊 Live Job Market Analytics Dashboard")
+st.markdown("Showing live job insights based on the latest **Jooble** data. Filter by job title, city, and experience level.")
+
+# Metric Cards
 col1, col2, col3 = st.columns(3)
-col1.metric("Total Jobs", len(df))
-col2.metric("Unique Companies", df['Company'].nunique())
-col3.metric("Top City", df['City'].mode()[0] if not df['City'].isna().all() else "N/A")
+col1.metric("🔢 Total Jobs", len(filtered_df))
+col2.metric("🏙️ Top City", filtered_df["City"].mode()[0] if not filtered_df["City"].isna().all() else "N/A")
+col3.metric("💼 Top Role", filtered_df["Job_Title_Cleaned"].mode()[0] if not filtered_df["Job_Title_Cleaned"].isna().all() else "N/A")
 
-# Sidebar Filters
-with st.sidebar:
-    st.header("🔍 Filters")
-    selected_city = st.selectbox("Filter by City", ["All"] + sorted(df['City'].dropna().unique().tolist()))
-    selected_company = st.selectbox("Filter by Company", ["All"] + sorted(df['Company'].dropna().unique().tolist()))
+st.divider()
 
-filtered_df = df.copy()
-if selected_city != "All":
-    filtered_df = filtered_df[filtered_df['City'] == selected_city]
-if selected_company != "All":
-    filtered_df = filtered_df[filtered_df['Company'] == selected_company]
+# Pie Chart - Job Title Distribution
+st.subheader("📌 Job Title Distribution")
+title_counts = filtered_df["Job_Title_Cleaned"].value_counts()
+fig1, ax1 = plt.subplots()
+ax1.pie(title_counts, labels=title_counts.index, autopct='%1.1f%%', startangle=90)
+ax1.axis('equal')
+st.pyplot(fig1)
 
-# Top job titles
-st.subheader("📌 Top 10 Job Titles")
-top_titles = filtered_df['Job_Title'].value_counts().head(10)
-st.bar_chart(top_titles)
+# Bar Chart - Jobs by City
+st.subheader("🌆 Jobs by City")
+city_counts = filtered_df["City"].value_counts().head(10)
+fig2, ax2 = plt.subplots()
+ax2.bar(city_counts.index, city_counts.values)
+ax2.set_ylabel("Number of Jobs")
+ax2.set_xlabel("City")
+plt.xticks(rotation=45)
+st.pyplot(fig2)
 
-# Top cities
-st.subheader("📍 Top Hiring Cities")
-top_cities = filtered_df['City'].value_counts().head(10)
-st.bar_chart(top_cities)
+# Bar Chart - Job Level
+st.subheader("📈 Job Level Breakdown")
+level_counts = filtered_df["Job_Level"].value_counts()
+fig3, ax3 = plt.subplots()
+ax3.bar(level_counts.index, level_counts.values)
+ax3.set_ylabel("Number of Jobs")
+ax3.set_xlabel("Level")
+st.pyplot(fig3)
 
-# Top companies
-st.subheader("🏢 Top Hiring Companies")
-top_companies = filtered_df['Company'].value_counts().head(10)
-st.bar_chart(top_companies)
+# Latest Jobs Table
+st.subheader("📄 Latest Jobs")
+st.dataframe(filtered_df[[
+    "Job_Title_Cleaned", "Company", "City", "Salary", "Job_Type", "Job_Level", "Posted_On", "Job_Link"
+]].sort_values(by="Posted_On", ascending=False).reset_index(drop=True))
 
-# Full table
-st.subheader("🗂 Full Job Listings (Filtered)")
-st.dataframe(filtered_df[['Job_Title', 'Company', 'City', 'Salary', 'Job_Type', 'Posted_On', 'Job_Link']])
+st.caption("Data source: Jooble API | Built with ❤️ by Adwaith Raj")
