@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 df = pd.read_csv("cleaned_jooble_jobs.csv")
 df["Posted_On"] = pd.to_datetime(df["Posted_On"])
 
-# Filters – only top 5
+# Filters – Top 5 only
 top_titles = df["Job_Title_Cleaned"].value_counts().nlargest(5).index.tolist()
 top_cities = df["City"].value_counts().nlargest(5).index.tolist()
 top_levels = df["Job_Level"].value_counts().nlargest(5).index.tolist()
@@ -38,13 +38,13 @@ st.divider()
 
 # --- Charts Grid ---
 
-# Chart Row 1 – Title Pie + City Bar
+# Row 1: Job Titles + Cities
 colA, colB = st.columns(2)
 
 with colA:
     st.subheader("📌 Job Title Distribution")
     title_counts = filtered_df["Job_Title_Cleaned"].value_counts().head(5)
-    fig1, ax1 = plt.subplots(figsize=(4, 4))
+    fig1, ax1 = plt.subplots(figsize=(5, 4))
     ax1.pie(title_counts, labels=title_counts.index, autopct='%1.1f%%', startangle=90)
     ax1.axis('equal')
     st.pyplot(fig1)
@@ -59,15 +59,17 @@ with colB:
     plt.xticks(rotation=30)
     st.pyplot(fig2)
 
-# Chart Row 2 – Donut (Level) + Company Horizontal
+# Row 2: Job Level + Top Companies
 colC, colD = st.columns(2)
 
 with colC:
     st.subheader("🧠 Job Levels")
     level_counts = filtered_df["Job_Level"].value_counts().head(5)
-    fig3, ax3 = plt.subplots(figsize=(4, 4))
-    wedges, texts, autotexts = ax3.pie(level_counts, labels=level_counts.index, autopct='%1.1f%%',
-                                       startangle=140, wedgeprops=dict(width=0.5))
+    fig3, ax3 = plt.subplots(figsize=(5, 4))
+    wedges, texts, autotexts = ax3.pie(
+        level_counts, labels=level_counts.index, autopct='%1.1f%%',
+        startangle=140, wedgeprops=dict(width=0.5)
+    )
     ax3.axis('equal')
     st.pyplot(fig3)
 
@@ -80,7 +82,7 @@ with colD:
     ax4.set_ylabel("Company")
     st.pyplot(fig4)
 
-# Row 3 – Timeline
+# Row 3: Timeline
 st.subheader("📅 Job Posting Trend")
 trend = filtered_df.groupby(filtered_df["Posted_On"].dt.date).size()
 fig5, ax5 = plt.subplots(figsize=(10, 4))
@@ -90,16 +92,30 @@ ax5.set_ylabel("Jobs Posted")
 plt.xticks(rotation=45)
 st.pyplot(fig5)
 
-# Job Table
-st.subheader("📄 Latest Jobs")
+# Latest Jobs Table with Clickable Links
+st.subheader("🧾 Latest Job Listings")
 
-# Make Job_Link clickable
-df_display = filtered_df.copy()
-df_display["Job_Link"] = df_display["Job_Link"].apply(lambda x: f"[Apply]({x})")
-
-# Display table
-st.dataframe(df_display[[
+# Show top 50
+latest_jobs = filtered_df[[
     "Job_Title_Cleaned", "Company", "City", "Salary", "Job_Type", "Job_Level", "Posted_On", "Job_Link"
-]].sort_values(by="Posted_On", ascending=False).reset_index(drop=True))
+]].sort_values(by="Posted_On", ascending=False).head(50).reset_index(drop=True)
 
-st.caption("📡 Built by Adwaith Raj | Powered by Jooble API | Hosted on Streamlit")
+# Build HTML Table
+table_html = "<table><thead><tr>"
+for col in latest_jobs.columns:
+    table_html += f"<th style='text-align:left;padding:5px'>{col}</th>"
+table_html += "</tr></thead><tbody>"
+
+for _, row in latest_jobs.iterrows():
+    table_html += "<tr>"
+    for col in latest_jobs.columns:
+        val = row[col]
+        if col == "Job_Link":
+            val = f"<a href='{val}' target='_blank'>Apply</a>"
+        table_html += f"<td style='text-align:left;padding:5px'>{val}</td>"
+    table_html += "</tr>"
+
+table_html += "</tbody></table>"
+st.markdown(table_html, unsafe_allow_html=True)
+
+st.caption("📡 Built by Adwaith Raj · Powered by Jooble API · Hosted on Streamlit")
