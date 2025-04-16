@@ -14,6 +14,9 @@ df = pd.read_csv("cleaned_jooble_jobs.csv")
 df["Posted_On"] = pd.to_datetime(df["Posted_On"])
 df["Posted_On"] = df["Posted_On"].dt.date
 
+# --- Drop rows with missing Company names ---
+df.dropna(subset=["Company"], inplace=True)
+
 # --- Filters Data Prep ---
 top_titles = df["Job_Title_Cleaned"].value_counts().nlargest(5).index.tolist()
 top_cities = df["City"].value_counts().nlargest(5).index.tolist()
@@ -87,8 +90,8 @@ with colC:
 
 with colD:
     st.subheader("🏢 Top Hiring Companies")
-    company_counts = filtered_df["Company"].value_counts().head(10)
-    fig4, ax4 = plt.subplots(figsize=(6, 5))
+    company_counts = filtered_df["Company"].value_counts().head(15)
+    fig4, ax4 = plt.subplots(figsize=(7, 6))
     ax4.barh(company_counts.index[::-1], company_counts.values[::-1])
     ax4.set_xlabel("Jobs")
     ax4.set_ylabel("Company")
@@ -132,8 +135,30 @@ table_df.index += 1
 table_df["Apply"] = table_df["Apply"].apply(lambda x: f"<a href='{x}' target='_blank'>Apply</a>")
 
 # Build HTML Table
-table_html = "<style>table {width: 100%; border-collapse: collapse;} th, td {padding: 10px; text-align: left;} th {background-color: #f0f2f6;}</style>"
+table_html = """
+<style>
+table {
+    width: 100%; 
+    border-collapse: collapse;
+    font-size: 15px;
+}
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+th {
+    background-color: #2c3e50;
+    color: white;
+    font-weight: bold;
+}
+tr:hover {
+    background-color: #f5f5f5;
+}
+</style>
+"""
 table_html += "<table><thead><tr><th>#</th>"
+
 for col in table_df.columns:
     table_html += f"<th>{col}</th>"
 table_html += "</tr></thead><tbody>"
@@ -154,4 +179,4 @@ st.download_button("⬇️ Download Full Job Data as CSV", data=csv, file_name="
 
 # Footer
 st.markdown("---")
-st.caption("📡 Built by Adwaith Raj · Powered by Jooble API · Hosted on Streamlit")
+st.caption("Built by Adwaith Raj · Powered by Jooble API · Hosted on Streamlit")
