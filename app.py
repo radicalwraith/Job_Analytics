@@ -134,27 +134,35 @@ table_df.index += 1
 # Convert job links to clickable HTML
 table_df["Apply"] = table_df["Apply"].apply(lambda x: f"<a href='{x}' target='_blank'>Apply</a>")
 
-# Build Light-Themed HTML Table
+# Build Dark-Themed Table
 table_html = """
 <style>
 table {
-    width: 100%;
+    width: 100%; 
     border-collapse: collapse;
     font-size: 15px;
-    background-color: #ffffff;
+    background-color: #1e1e1e;
+    color: #ffffff;
 }
 th, td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #444;
 }
 th {
-    background-color: #f2f2f2;
-    color: #333333;
+    background-color: #2c3e50;
+    color: #ffffff;
     font-weight: bold;
 }
 tr:hover {
-    background-color: #f9f9f9;
+    background-color: #333333;
+}
+a {
+    color: #66ccff;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
 }
 </style>
 """
